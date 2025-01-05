@@ -54,12 +54,6 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-            transition: all 0.5s ease-in-out;
-        }
-
-        #upload-form.shrink {
-            transform: translateX(-40%); /* Moves the form to the left */
-            opacity: 0.4; /* Makes the form more translucent */
         }
 
         #upload-form label {
@@ -128,23 +122,6 @@
             background: #d62828;
         }
 
-        #home-button {
-            background-color: #6a994e;
-            color: white;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 20px;
-        }
-
-        #home-button:hover {
-            background-color: #588d42;
-        }
-
     </style>
 </head>
 <body>
@@ -152,9 +129,6 @@
         <h1>Welcome to the Image Gallery</h1>
     </header>
     <main>
-        <!-- Home Button -->
-        <a href="index.html" id="home-button">Home</a>
-
         <form id="upload-form">
             <label for="image-input">Add your own image below:</label>
             <input type="file" id="image-input" accept="image/*">
@@ -167,11 +141,10 @@
         const gallery = document.getElementById('gallery');
         const uploadButton = document.getElementById('upload-button');
         const imageInput = document.getElementById('image-input');
-        const uploadForm = document.getElementById('upload-form');
 
         let imageAdded = false;
 
-        uploadButton.addEventListener('click', () => {
+        uploadButton.addEventListener('click', async () => {
             if (imageAdded) {
                 alert('You can only upload one image at a time!');
                 return;
@@ -179,35 +152,55 @@
 
             const file = imageInput.files[0];
             if (file) {
-                const reader = new FileReader();
+                // Create FormData for file upload
+                const formData = new FormData();
+                formData.append("image", file);
 
-                reader.onload = () => {
-                    const container = document.createElement('div');
-                    container.className = 'image-container';
+                // Imgbb API URL (replace <your_api_key> with your actual API key)
+                const url = "7d7565e92bbce212d792c5c927085203";
 
-                    const img = document.createElement('img');
-                    img.src = reader.result;
-
-                    const button = document.createElement('button');
-                    button.className = 'purchase-btn';
-                    button.textContent = 'Make 1px Bigger';
-                    button.addEventListener('click', () => {
-                        const currentWidth = parseInt(img.style.width || 50);
-                        const currentHeight = parseInt(img.style.height || 50);
-                        img.style.width = currentWidth + 1 + 'px';
-                        img.style.height = currentHeight + 1 + 'px';
+                try {
+                    // Upload the image to Imgbb
+                    const response = await fetch(url, {
+                        method: "POST",
+                        body: formData,
                     });
 
-                    container.appendChild(img);
-                    gallery.appendChild(container);
-                    gallery.appendChild(button);
+                    const data = await response.json();
 
-                    // Trigger the shrink and move animation
-                    uploadForm.classList.add('shrink');
-                    imageAdded = true;
-                };
+                    if (data.success) {
+                        // Get the image URL from Imgbb response
+                        const imageUrl = data.data.url;
 
-                reader.readAsDataURL(file);
+                        // Create a new image element and display it
+                        const container = document.createElement('div');
+                        container.className = 'image-container';
+
+                        const img = document.createElement('img');
+                        img.src = imageUrl; // Set the image source to the URL from Imgbb
+
+                        // Add a purchase button (if needed)
+                        const button = document.createElement('button');
+                        button.className = 'purchase-btn';
+                        button.textContent = 'Make 1px Bigger';
+                        button.addEventListener('click', () => {
+                            const currentWidth = parseInt(img.style.width || 50);
+                            const currentHeight = parseInt(img.style.height || 50);
+                            img.style.width = currentWidth + 1 + 'px';
+                            img.style.height = currentHeight + 1 + 'px';
+                        });
+
+                        container.appendChild(img);
+                        gallery.appendChild(container);
+                        gallery.appendChild(button);
+                        imageAdded = true;
+                    } else {
+                        alert("Error uploading image.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("There was an error uploading the image.");
+                }
             }
         });
     </script>
